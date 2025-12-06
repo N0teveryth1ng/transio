@@ -31,12 +31,8 @@ app.add_middleware(
 app.mount("/static", StaticFiles(directory=FRONTEND_DIR), name="static")
 
 
-# base routing
-@app.get("/")
-def home():
-    return FileResponse("static/register.html")
-
 # client = MongoClient("mongodb://localhost:27017/")
+
 
 MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017/")
 client = MongoClient(MONGO_URI)
@@ -94,7 +90,14 @@ async def broadcast_online_devices():
 
 
 
-# EXISTING API ENDPOINTS
+# EXISTING API ENDPOINTS ------------------------
+
+
+# home routing
+@app.get("/")
+def home():
+    return FileResponse(os.path.join(FRONTEND_DIR, "register.html"))
+
 
 # registration for new devices 
 @app.post("/register")
@@ -159,4 +162,9 @@ async def download_file(device_id: str, filename: str):
             "Content-Disposition": f"attachment; filename={filename}"
         }
     )
+
+
+
+
+
 
