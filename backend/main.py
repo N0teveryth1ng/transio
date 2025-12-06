@@ -3,7 +3,7 @@ from pymongo import MongoClient
 from datetime import datetime
 
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 import os
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -30,6 +30,12 @@ app.add_middleware(
 
 app.mount("/static", StaticFiles(directory=FRONTEND_DIR), name="static")
 
+
+# base routing
+@app.get("/")
+def home():
+    return FileResponse("static/register.html")
+
 # client = MongoClient("mongodb://localhost:27017/")
 
 MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017/")
@@ -54,10 +60,9 @@ async def ws_endpoint(ws: WebSocket):
 
         online_devices[device_id] = {"ws": ws, "name": name}
 
-        # Notify all
+        
         await broadcast_online_devices()
 
-        # Keep connection alive
         while True:
             await ws.receive_text()
 
@@ -89,10 +94,7 @@ async def broadcast_online_devices():
 
 
 
-# ==============================
 # EXISTING API ENDPOINTS
-# (unchanged)
-# ==============================
 
 # registration for new devices 
 @app.post("/register")
@@ -121,14 +123,17 @@ async def get_devices():
 # upload file in devices 
 @app.post("/upload")
 async def upload(to: str = Form(...), file: UploadFile = File(...)):
+    
+    clean_name = file.filename.replace(" ", "_")
+    
     content = await file.read()
     files.insert_one({
         "to": to,
-        "file": file.filename,
+        "file": clean_name,
         "content": content,
         "uploaded_at": datetime.utcnow()
     })
-    return {"status": "uploaded"}
+    return {"status": "uploaded", "filename": clean_name}
 
 
 # user device receives file 
@@ -137,10 +142,13 @@ async def get_files(device_id: str):
     return list(files.find({"to": device_id}, {"_id": 0, "content": 0}))
 
 
-
+# user downloads files  
 @app.get("/download/{device_id}/{filename}")
 async def download_file(device_id: str, filename: str):
-    file_doc = files.find_one({"to": device_id, "file": filename})
+    
+    clean_name = filename.replace(" ", "_")
+
+    file_doc = files.find_one({"to": device_id, "file": clean_name})
     if not file_doc:
         return {"error": "File not found"}
 
@@ -151,3 +159,4 @@ async def download_file(device_id: str, filename: str):
             "Content-Disposition": f"attachment; filename={filename}"
         }
     )
+
