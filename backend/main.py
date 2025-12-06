@@ -7,9 +7,16 @@ from fastapi.responses import FileResponse
 import os
 from fastapi.middleware.cors import CORSMiddleware
 
+from dotenv import load_dotenv
+load_dotenv()
+
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 FRONTEND_DIR = os.path.join(BASE_DIR, "frontend")
+
+#  - -  - new added 👇
+FRONTEND_DIR = os.path.abspath(FRONTEND_DIR)
+
 
 app = FastAPI()
 
@@ -23,7 +30,10 @@ app.add_middleware(
 
 app.mount("/static", StaticFiles(directory=FRONTEND_DIR), name="static")
 
-client = MongoClient("mongodb://localhost:27017/")
+# client = MongoClient("mongodb://localhost:27017/")
+
+MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017/")
+client = MongoClient(MONGO_URI)
 db = client["airdropLAN"]
 devices = db["devices"]
 files = db["files"]

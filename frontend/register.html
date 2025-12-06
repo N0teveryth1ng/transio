@@ -1,323 +1,268 @@
-<!-- <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Register Device</title>
-
-    <style>
-        #deviceList, #onlineList {
-            width: 300px;
-            height: 300px;
-            border: 1px solid #333;
-            padding: 10px;
-            overflow-y: auto;
-            margin-left: 40px;
-        }
-        .device-box {
-            padding: 8px;
-            border-bottom: 1px solid #ccc;
-        }
-    </style>
-</head>
-
-<body>
-
-<h2>Register Device</h2>
-
-<div style="display: flex; gap: 40px;">
-
-    <form id="registerForm">
-        <label>Device ID:</label><br>
-        <input type="text" id="device_id" required><br><br>
-
-        <label>Device Name:</label><br>
-        <input type="text" id="name" required><br><br>
-
-        <button type="submit">Register</button>
-    </form>
-
-    <div>
-        <div id="deviceList">
-            <h3>Registered Devices</h3>
-        </div>
-
-        <div id="onlineList" style="margin-top:20px;">
-            <h3>Online Devices</h3>
-        </div>
-    </div>
-
-</div>
-
-<script>
-    // -----------------------------
-    // LOAD ALL REGISTERED DEVICES
-    // -----------------------------
-    async function loadDevices() {
-        const res = await fetch("http://192.168.31.88:8000/devices");
-        const data = await res.json();
-
-        const box = document.getElementById("deviceList");
-        box.innerHTML = "<h3>Registered Devices</h3>";
-
-        data.forEach(d => {
-            box.innerHTML += `
-                <div class="device-box">
-                    <strong>${d.name}</strong><br>
-                    ID: ${d.device_id}<br>
-                    Last Seen: ${d.last_seen}
-                </div>
-            `;
-        });
-    }
-
-    loadDevices();
-
-
-    // -----------------------------
-    // REGISTER DEVICE
-    // -----------------------------
-    document.getElementById("registerForm").addEventListener("submit", async (e) => {
-        e.preventDefault();
-
-        const device_id = document.getElementById("device_id").value;
-        const name = document.getElementById("name").value;
-
-        const res = await fetch(
-            `http://192.168.31.88:8000/register?device_id=${device_id}&name=${name}`,
-            { method: "POST" }
-        );
-
-        const result = await res.json();
-        alert(result.message);
-        loadDevices();
-    });
-
-    // -----------------------------
-    // REALTIME ONLINE DEVICES
-    // -----------------------------
-    const ws = new WebSocket("ws://192.168.31.88:8000/ws");
-
-    ws.onopen = () => {
-        ws.send(JSON.stringify({
-            device_id: "browser_" + Math.random().toString(36).substring(2),
-            name: "Web Client"
-        }));
-    };
-
-    ws.onmessage = (event) => {
-        const data = JSON.parse(event.data);
-
-        if (data.type === "online_devices") {
-            const box = document.getElementById("onlineList");
-            box.innerHTML = "<h3>Online Devices</h3>";
-
-            data.devices.forEach(d => {
-                box.innerHTML += `
-                    <div class="device-box">
-                        <strong>${d.name}</strong><br>
-                        ID: ${d.device_id}
-                    </div>
-                `;
-            });
-        }
-    };
-</script>
-
-</body>
-</html> -->
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Register Device</title>
+    <title>TransIO</title>
 
     <style>
-        #deviceList, #onlineList {
-            width: 300px;
-            height: 300px;
-            border: 1px solid #333;
-            padding: 10px;
-            overflow-y: auto;
-            margin-left: 40px;
-        }
-        .device-box {
-            padding: 8px;
-            border-bottom: 1px solid #ccc;
-        }
+       /* ----------------- General ----------------- */
+body {
+    font-family: Arial, sans-serif;
+    background: #121212; /* dark background */
+    color: #e0e0e0;      /* light text */
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* ----------------- Headings ----------------- */
+h1 {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-size: 3rem;
+    font-weight: 800;
+    text-align: center;
+    letter-spacing: 2px;
+    margin: 30px 0;
+    text-transform: uppercase;
+    background: linear-gradient(90deg, #ffa500, #ffcc70); /* pops on dark */
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+h2, h3 {
+    text-align: center;
+    margin: 0 0 10px 0;
+}
+
+/* ----------------- Device ID ----------------- */
+#myDeviceId {
+    font-weight: bold;
+    color: #ffa500;
+    text-align: center;
+}
+
+/* ----------------- Panels ----------------- */
+#onlineList, #inbox {
+    background: #1e1e1e;       /* dark panel */
+    border: 1px solid #333;
+    border-radius: 8px;
+    padding: 15px;
+    width: 100%;
+    max-width: 400px;
+    max-height: 300px;
+    overflow-y: auto;
+    box-sizing: border-box;
+    margin-bottom: 20px;
+}
+
+/* ----------------- Devices ----------------- */
+.device-box {
+    padding: 10px;
+    border-bottom: 1px solid #333;
+}
+
+.device-box:last-child {
+    border-bottom: none;
+}
+
+.device-box strong {
+    color: #ffa500; /* accent for device names */
+}
+
+.device-box form {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+/* ----------------- Buttons ----------------- */
+.device-box button, #inbox button {
+    background-color: #ffa500;
+    color: #121212;
+    border: none;
+    padding: 6px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.device-box button:hover, #inbox button:hover {
+    background-color: #ff8c00;
+}
+
+/* ----------------- Inbox ----------------- */
+#inbox div {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid #333;
+}
+
+#inbox div:last-child {
+    border-bottom: none;
+}
+
+/* ----------------- Responsive ----------------- */
+@media (max-width: 500px) {
+    #onlineList, #inbox {
+        width: 90%;
+        padding: 10px;
+    }
+
+    h1 {
+        font-size: 2.5rem;
+    }
+}
+
+
+
+
+        
+
     </style>
 </head>
 
 <body>
 
-<h2>Register Device</h2>
+<h1> TransIO</h1>
 
-<div style="display: flex; gap: 40px;">
+<h2>Your Device</h2>
+<p><strong>ID:</strong> <span id="myDeviceId"></span></p>
 
-    <form id="registerForm">
-        <label>Device ID:</label><br>
-        <input type="text" id="device_id" required><br><br>
-
-        <label>Device Name:</label><br>
-        <input type="text" id="name" required><br><br>
-
-        <button type="submit">Register</button>
-    </form>
-
-    <div>
-        <div id="deviceList">
-            <h3>Registered Devices</h3>
-        </div>
-
-        <div id="onlineList" style="margin-top:20px;">
-            <h3>Online Devices</h3>
-        </div>
-    </div>
-
+<div id="onlineList">
+    <h3>Online Devices</h3>
 </div>
 
+<h3>Incoming Files</h3>
+<div id="inbox" style="border:1px solid #333; width:300px; height:200px; overflow-y:auto; padding:10px;">
+    <p>No files yet.</p>
+</div>
+
+<hr>
+
 <script>
-    // -----------------------------------------
-    // LOAD REGISTERED DEVICES
-    // -----------------------------------------
-    async function loadDevices() {
-        const res = await fetch("http://192.168.31.88:8000/devices");
-        const data = await res.json();
 
-        const box = document.getElementById("deviceList");
-        box.innerHTML = "<h3>Registered Devices</h3>";
+// ---------------------------------------
+// UNIQUE DEVICE ID
+// ---------------------------------------
+const myDeviceId = "dev_" + Math.random().toString(36).substring(2);
+document.getElementById("myDeviceId").textContent = myDeviceId;
 
-        data.forEach(d => {
-            box.innerHTML += `
-                <div class="device-box">
-                    <strong>${d.name}</strong><br>
-                    ID: ${d.device_id}<br>
-                    Last Seen: ${d.last_seen}
-                </div>
-            `;
-        });
-    }
+// ---------------------------------------
+// WEBSOCKET CONNECT
+// ---------------------------------------
+let ws;
 
-    loadDevices();
-
-
-    // -----------------------------------------
-    // REGISTER DEVICE
-    // -----------------------------------------
-    document.getElementById("registerForm").addEventListener("submit", async (e) => {
-        e.preventDefault();
-
-        const device_id = document.getElementById("device_id").value;
-        const name = document.getElementById("name").value;
-
-        const res = await fetch(
-            `http://192.168.31.88:8000/register?device_id=${device_id}&name=${name}`,
-            { method: "POST" }
-        );
-
-        const result = await res.json();
-        alert(result.message);
-        loadDevices();
-    });
-
-
-    // -----------------------------------------
-    // REALTIME ONLINE DEVICES LIST
-    // -----------------------------------------
-    const ws = new WebSocket("ws://192.168.31.88:8000/ws");
+function connectWebSocket() {
+    ws = new WebSocket("ws://192.168.31.88:8000/ws");
 
     ws.onopen = () => {
         ws.send(JSON.stringify({
-            device_id: "browser_" + Math.random().toString(36).substring(2),
-            name: "Web Client"
+            device_id: myDeviceId,
+            name: "Device"
         }));
     };
 
+    ws.onclose = () => setTimeout(connectWebSocket, 2000);
+
     ws.onmessage = (event) => {
-    const data = JSON.parse(event.data);
+        const data = JSON.parse(event.data);
+        if (data.type === "online_devices") updateOnlineDevices(data.devices);
+    };
+}
 
-    if (data.type === "online_devices") {
-        const box = document.getElementById("onlineList");
-        box.innerHTML = "<h3>Online Devices</h3>";
+connectWebSocket();
 
-        data.devices.forEach(d => {
-            const div = document.createElement("div");
-            div.classList.add("device-box");
 
-            div.innerHTML = `
-                <strong>${d.name}</strong><br>
-                ID: ${d.device_id}<br><br>
+// ---------------------------------------
+// RENDER ONLINE DEVICES + UPLOAD FORM
+// ---------------------------------------
+function updateOnlineDevices(devices) {
+    const box = document.getElementById("onlineList");
+    box.innerHTML = "<h3>Online Devices</h3>";
 
-                <form class="uploadForm" enctype="multipart/form-data">
-                    <input type="file" name="file" required />
-                    <input type="hidden" name="to" value="${d.device_id}" />
-                    <button type="submit">Send File</button>
-                </form>
-            `;
+    devices.forEach(d => {
+        if (d.device_id === myDeviceId) return;
 
-            box.appendChild(div);
-        });
+        const div = document.createElement("div");
+        div.classList.add("device-box");
 
-        // attach upload handlers AFTER DOM is built
-        document.querySelectorAll(".uploadForm").forEach(form => {
-            form.addEventListener("submit", async (e) => {
-                e.preventDefault();
+        div.innerHTML = `
+            <strong>${d.name}</strong><br>
+            ID: ${d.device_id}<br><br>
 
-                const formData = new FormData(form);
+            <form class="uploadForm" enctype="multipart/form-data">
+                <input type="file" name="file" required />
+                <input type="hidden" name="to" value="${d.device_id}" />
+                <button type="submit">Send</button>
+            </form>
+        `;
 
+        box.appendChild(div);
+    });
+
+    document.querySelectorAll(".uploadForm").forEach(form => {
+        form.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const fd = new FormData(form);
+
+            try {
                 const res = await fetch("http://192.168.31.88:8000/upload", {
                     method: "POST",
-                    body: formData
+                    body: fd
                 });
 
                 const result = await res.json();
                 alert(result.status);
-            });
+            } catch {
+                alert("Upload failed");
+            }
         });
+    });
+}
+
+
+// ---------------------------------------
+// CHECK INCOMING FILES
+// ---------------------------------------
+async function checkIncoming() {
+    try {
+        const res = await fetch(`http://192.168.31.88:8000/files/${myDeviceId}`);
+        const files = await res.json();
+
+        const inbox = document.getElementById("inbox");
+        inbox.innerHTML = "";
+
+        if (files.length === 0) {
+            inbox.innerHTML = "<p>No files yet.</p>";
+            return;
+        }
+
+        files.forEach(f => {
+            inbox.innerHTML += `
+                <div style="margin-bottom:10px;">
+                    <strong>${f.file}</strong>
+                    <button onclick="downloadFile('${f.file}')">Download</button>
+                </div>`;
+        });
+    } catch (err) {
+        console.log("Inbox error:", err);
     }
-};
+}
+
+setInterval(checkIncoming, 3000);
 
 
+// ---------------------------------------
+// DOWNLOAD
+// ---------------------------------------
+function downloadFile(name) {
+    window.location.href = `http://192.168.31.88:8000/download/${myDeviceId}/${name}`;
+}
 
 </script>
 
